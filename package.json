@@ -1,10 +1,37 @@
 {
-  "dependencies": {
-    "bcryptjs": "^3.0.2",
-    "express": "^5.1.0",
-    "jsonwebtoken": "^9.0.2"
+  "name": "duskwallet-api",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/JohnVitor-Dev/DuskWallet-API#readme",
+  "bugs": {
+    "url": "https://github.com/JohnVitor-Dev/DuskWallet-API/issues"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JohnVitor-Dev/DuskWallet-API.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "module",
+  "main": "index.js",
   "scripts": {
-    "start": "node src/app.js"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon src/server.js",
+    "prisma:generate": "dotenv -e .env -- prisma generate",
+    "prisma:migrate": "dotenv -e .env -- prisma migrate dev",
+    "prisma:studio": "dotenv -e .env -- prisma studio",
+    "prisma:status": "dotenv -e .env -- prisma migrate status"
+  },
+  "keywords": [],
+  "dependencies": {
+    "@prisma/client": "^6.19.0",
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "prisma": "^6.19.0"
+  },
+  "devDependencies": {
+    "dotenv-cli": "^11.0.0",
+    "nodemon": "^3.1.11"
   }
 }
