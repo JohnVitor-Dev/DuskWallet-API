@@ -2,8 +2,10 @@ import 'dotenv/config';
 import express from 'express';
 import { prisma } from './prismaClient.js';
 import { errorHandler } from './middlewares/errorHandler.js';
+import { authMiddleware } from './middlewares/authMiddleware.js';
 
 import authRoute from './routes/auth.routes.js';
+import transactionRoute from './routes/transactions.routes.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -13,6 +15,7 @@ app.use(express.json());
 
 // Rotas
 app.use('/api/auth', authRoute);
+app.use('/api/transactions', authMiddleware, transactionRoute);
 
 // Tratamento de erros
 app.use(errorHandler);

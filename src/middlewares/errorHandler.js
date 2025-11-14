@@ -9,6 +9,6 @@ export const errorHandler = (err, req, res, next) => {
         });
 
     } else {
-        res.status(500).json({ error: "Erro ao registrar usuário" });
+        res.status(500).json({ error: "Erro interno do servidor" });
     }
 };

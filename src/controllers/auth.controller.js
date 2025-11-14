@@ -50,7 +50,7 @@ export const loginUser = async (req, res, next) => {
             return res.status(401).json({ error: "Email ou senha inválidos" });
         }
 
-        const payload = { id: user.id };
+        const payload = { userID: user.id };
         const secret = process.env.JWT_SECRET;
         const token = jwt.sign(payload, secret, { expiresIn: "1h" });
 
