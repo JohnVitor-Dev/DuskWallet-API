@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import { prisma } from "../prismaClient.js";
+import jwt from "jsonwebtoken";
 
 export const registerUser = async (req, res, next) => {
     const { email, password, name } = req.body;
@@ -49,7 +50,14 @@ export const loginUser = async (req, res, next) => {
             return res.status(401).json({ error: "Email ou senha inválidos" });
         }
 
-        res.json({ message: "Usuário logado com sucesso" });
+        const payload = { id: user.id };
+        const secret = process.env.JWT_SECRET;
+        const token = jwt.sign(payload, secret, { expiresIn: "1h" });
+
+        res.json({
+            message: "Usuário logado com sucesso",
+            token: token
+        });
 
     } catch (error) {
         next(error);
