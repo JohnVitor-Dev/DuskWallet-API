@@ -55,3 +55,6 @@ desktop.ini
 
 # REPL history
 .node_repl_history
+
+# Ignore scripts directory
+scripts/

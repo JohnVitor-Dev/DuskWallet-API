@@ -20,7 +20,8 @@
     "prisma:generate": "dotenv -e .env -- prisma generate",
     "prisma:migrate": "dotenv -e .env -- prisma migrate dev",
     "prisma:studio": "dotenv -e .env -- prisma studio",
-    "prisma:status": "dotenv -e .env -- prisma migrate status"
+    "prisma:status": "dotenv -e .env -- prisma migrate status",
+    "generate:transactions": "node scripts/generate-transactions.js"
   },
   "keywords": [],
   "dependencies": {
