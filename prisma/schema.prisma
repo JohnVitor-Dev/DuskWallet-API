@@ -20,12 +20,29 @@ enum TransactionType {
   EXPENSE
 }
 
+enum TransactionCategory {
+  MORADIA       // Aluguel, hipoteca, manutenção
+  CONTAS        // Luz, água, internet, gás, celular
+  MERCADO       // Supermercado, feira, padaria
+  COMIDA_FORA   // Restaurantes, delivery, lanches
+  TRANSPORTE    // Combustível, transporte público, apps
+  SAUDE         // Farmácia, médico, plano de saúde
+  EDUCACAO      // Cursos, livros, mensalidades
+  LAZER         // Streaming, cinema, hobbies, bares
+  COMPRAS       // Roupas, eletrônicos, presentes
+  DIVIDAS       // Pagamento de empréstimo, fatura do cartão
+  INVESTIMENTOS // Aportes em fundos, ações, etc.
+  SALARIO       // Receita principal
+  OUTRAS_RECEITAS // Bônus, freelance, presentes recebidos
+  OUTROS        // Qualquer outra coisa não categorizada
+}
+
 model Transaction {
   id          String   @id @default(cuid())
   description String
   amount      Float
   type        TransactionType
-  category    String?
+  category    TransactionCategory
   date        DateTime @default(now())
   userId      String
   user        User     @relation(fields: [userId], references: [id])

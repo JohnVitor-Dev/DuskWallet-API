@@ -4,8 +4,8 @@ export const createTransaction = async (req, res, next) => {
     const { description, amount, type, category } = req.body;
     const userID = req.userID;
 
-    if (!description || !amount || !type) {
-        return res.status(400).json({ error: "Description, amount, and type are required" });
+    if (!description || !amount || !type || !category) {
+        return res.status(400).json({ error: "Descrição, valor, tipo e categoria são obrigatórios" });
     }
 
     try {
