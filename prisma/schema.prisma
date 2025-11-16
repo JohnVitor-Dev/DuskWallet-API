@@ -20,6 +20,12 @@ enum TransactionType {
   EXPENSE
 }
 
+enum PaymentMethod {
+  DINHEIRO
+  PIX
+  CREDITO
+}
+
 enum TransactionCategory {
   MORADIA       // Aluguel, hipoteca, manutenção
   CONTAS        // Luz, água, internet, gás, celular
@@ -38,12 +44,13 @@ enum TransactionCategory {
 }
 
 model Transaction {
-  id          String   @id @default(cuid())
-  description String
-  amount      Float
-  type        TransactionType
-  category    TransactionCategory
-  date        DateTime @default(now())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
+  id            String              @id @default(cuid())
+  description   String
+  amount        Float
+  type          TransactionType
+  category      TransactionCategory
+  paymentMethod PaymentMethod
+  date          DateTime            @default(now())
+  userId        String
+  user          User                @relation(fields: [userId], references: [id])
 }

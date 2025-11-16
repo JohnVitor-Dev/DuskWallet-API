@@ -1,11 +1,11 @@
 import { prisma } from "../prismaClient.js";
 
 export const createTransaction = async (req, res, next) => {
-    const { description, amount, type, category } = req.body;
+    const { description, amount, type, category, paymentMethod } = req.body;
     const userID = req.userID;
 
-    if (!description || !amount || !type || !category) {
-        return res.status(400).json({ error: "Descrição, valor, tipo e categoria são obrigatórios" });
+    if (!description || !amount || !type || !category || !paymentMethod) {
+        return res.status(400).json({ error: "Descrição, valor, tipo, categoria e forma de pagamento são obrigatórios" });
     }
 
     try {
@@ -15,6 +15,7 @@ export const createTransaction = async (req, res, next) => {
                 amount,
                 type,
                 category,
+                paymentMethod,
                 userId: userID
             }
         });
@@ -64,7 +65,7 @@ export const getTransactionById = async (req, res, next) => {
 
 export const updateTransaction = async (req, res, next) => {
     const { id } = req.params;
-    const { description, amount, type, category } = req.body;
+    const { description, amount, type, category, paymentMethod } = req.body;
     const userID = req.userID;
 
     try {
@@ -74,7 +75,8 @@ export const updateTransaction = async (req, res, next) => {
                 description,
                 amount,
                 type,
-                category
+                category,
+                paymentMethod
             }
         });
 
