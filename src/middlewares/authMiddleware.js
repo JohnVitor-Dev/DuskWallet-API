@@ -7,9 +7,14 @@ export const authMiddleware = (req, res, next) => {
         return res.status(401).json({ error: "Token de autenticação não fornecido" });
     }
 
+    // Validar formato do header
+    if (!authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: "Formato de token inválido. Use: Bearer <token>" });
+    }
+
     const token = authHeader.split(' ')[1];
 
-    if (!token) {
+    if (!token || token.trim() === '') {
         return res.status(401).json({ error: "Token de autenticação inválido" });
     }
 

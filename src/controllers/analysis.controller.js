@@ -25,6 +25,7 @@ export const getAnalysis = async (req, res, next) => {
                 amount: true,
                 type: true,
                 category: true,
+                paymentMethod: true,
                 date: true
             }
 
@@ -110,18 +111,39 @@ export const getAnalysis = async (req, res, next) => {
         ${transactionsText}
         `;
 
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const analysisText = response.text();
+        const maxRetries = 3;
+        let jsonAnalysis = null;
 
-        try {
-            const jsonAnalysis = JSON.parse(analysisText);
-            res.status(200).json({ analysis: jsonAnalysis });
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                const result = await model.generateContent(prompt);
+                const response = await result.response;
+                let analysisText = response.text();
 
-        } catch (parseError) {
-            console.error("Erro ao parsear JSON da IA:", analysisText);
-            next(new Error("A resposta da IA não estava em um formato JSON válido."));
+                analysisText = analysisText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+
+                jsonAnalysis = JSON.parse(analysisText);
+                break;
+
+            } catch (parseError) {
+                console.error(`Tentativa ${attempt} falhou ao parsear JSON da IA`);
+
+                if (attempt === maxRetries) {
+                    console.error("Resposta da IA após todas as tentativas:", parseError.message);
+                    next(new Error("Não foi possível obter uma resposta válida da IA após múltiplas tentativas."));
+                    return;
+                }
+
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
         }
+
+        if (!jsonAnalysis) {
+            next(new Error("Erro inesperado ao gerar análise"));
+            return;
+        }
+
+        res.status(200).json({ analysis: jsonAnalysis });
 
     } catch (error) {
         next(error);

@@ -4,8 +4,8 @@ export const createTransaction = async (req, res, next) => {
     const { description, amount, type, category, paymentMethod } = req.body;
     const userID = req.userID;
 
-    if (!description || !amount || !type || !category || !paymentMethod) {
-        return res.status(400).json({ error: "Descrição, valor, tipo, categoria e forma de pagamento são obrigatórios" });
+    if (!userID) {
+        return res.status(401).json({ error: "Usuário não autenticado" });
     }
 
     try {
@@ -30,6 +30,10 @@ export const createTransaction = async (req, res, next) => {
 export const getTransactions = async (req, res, next) => {
     const userID = req.userID;
 
+    if (!userID) {
+        return res.status(401).json({ error: "Usuário não autenticado" });
+    }
+
     try {
         const transactions = await prisma.transaction.findMany({
             where: { userId: userID },
@@ -47,6 +51,10 @@ export const getTransactions = async (req, res, next) => {
 export const getTransactionById = async (req, res, next) => {
     const { id } = req.params;
     const userID = req.userID;
+
+    if (!userID) {
+        return res.status(401).json({ error: "Usuário não autenticado" });
+    }
 
     try {
         const transaction = await prisma.transaction.findFirst({
@@ -68,16 +76,25 @@ export const updateTransaction = async (req, res, next) => {
     const { description, amount, type, category, paymentMethod } = req.body;
     const userID = req.userID;
 
+    if (!userID) {
+        return res.status(401).json({ error: "Usuário não autenticado" });
+    }
+
+    const updateData = {};
+    if (description !== undefined) updateData.description = description;
+    if (amount !== undefined) updateData.amount = amount;
+    if (type !== undefined) updateData.type = type;
+    if (category !== undefined) updateData.category = category;
+    if (paymentMethod !== undefined) updateData.paymentMethod = paymentMethod;
+
+    if (Object.keys(updateData).length === 0) {
+        return res.status(400).json({ error: "Nenhum campo para atualizar foi fornecido" });
+    }
+
     try {
         const transaction = await prisma.transaction.updateMany({
             where: { id: id, userId: userID },
-            data: {
-                description,
-                amount,
-                type,
-                category,
-                paymentMethod
-            }
+            data: updateData
         });
 
         if (transaction.count === 0) {
@@ -94,6 +111,10 @@ export const updateTransaction = async (req, res, next) => {
 export const deleteTransaction = async (req, res, next) => {
     const { id } = req.params;
     const userID = req.userID;
+
+    if (!userID) {
+        return res.status(401).json({ error: "Usuário não autenticado" });
+    }
 
     try {
         const transaction = await prisma.transaction.deleteMany({
