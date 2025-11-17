@@ -29,28 +29,36 @@ if (!process.env.GEMINI_API_KEY) {
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Configurar trust proxy para Vercel
+app.set('trust proxy', 1);
+
 // CORS
 app.use(cors());
 
 // Headers HTTP
 app.use(helmet());
 
-// Rate Limiting - Geral
+// Rate Limiting - Geral (configurado para Vercel)
 const generalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutos
     max: 100, // 100 requisições por IP
     message: { error: 'Muitas requisições. Tente novamente em 15 minutos.' },
     standardHeaders: true,
     legacyHeaders: false,
+    // Configuração para serverless/proxy
+    skip: (req) => {
+        // Pular rate limit para health checks
+        return req.path === '/' || req.path === '/api';
+    }
 });
 
-// Rate Limiting - Rotas de autenticação
+// Rate Limiting - Rotas de autenticação (configurado para Vercel)
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutos
     max: 5, // 5 tentativas por IP
     message: { error: 'Muitas tentativas de login. Tente novamente em 15 minutos.' },
     standardHeaders: true,
-    legacyHeaders: false,
+    legacyHeaders: false
 });
 
 // Aplicar rate limiter geral

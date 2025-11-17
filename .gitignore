@@ -58,3 +58,5 @@ desktop.ini
 
 # Ignore scripts directory
 scripts/
+
+.vercel
