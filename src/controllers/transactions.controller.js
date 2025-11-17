@@ -1,7 +1,7 @@
 import { prisma } from "../prismaClient.js";
 
 export const createTransaction = async (req, res, next) => {
-    const { description, amount, type, category, paymentMethod } = req.body;
+    const { description, amount, type, category, paymentMethod, date } = req.body;
     const userID = req.userID;
 
     if (!userID) {
@@ -16,7 +16,8 @@ export const createTransaction = async (req, res, next) => {
                 type,
                 category,
                 paymentMethod,
-                userId: userID
+                userId: userID,
+                ...(date && { date: new Date(date) })
             }
         });
 
@@ -73,7 +74,7 @@ export const getTransactionById = async (req, res, next) => {
 
 export const updateTransaction = async (req, res, next) => {
     const { id } = req.params;
-    const { description, amount, type, category, paymentMethod } = req.body;
+    const { description, amount, type, category, paymentMethod, date } = req.body;
     const userID = req.userID;
 
     if (!userID) {
@@ -86,6 +87,7 @@ export const updateTransaction = async (req, res, next) => {
     if (type !== undefined) updateData.type = type;
     if (category !== undefined) updateData.category = category;
     if (paymentMethod !== undefined) updateData.paymentMethod = paymentMethod;
+    if (date !== undefined) updateData.date = new Date(date);
 
     if (Object.keys(updateData).length === 0) {
         return res.status(400).json({ error: "Nenhum campo para atualizar foi fornecido" });
