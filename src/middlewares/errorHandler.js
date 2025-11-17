@@ -1,9 +1,12 @@
 export const errorHandler = (err, req, res, next) => {
-    if (process.env.NODE_ENV === 'development') {
-        console.error('Erro detalhado:', err);
-    } else {
-        console.error('Erro:', err.message);
-    }
+    // Log detalhado do erro
+    console.error('==================== ERRO ====================');
+    console.error('Timestamp:', new Date().toISOString());
+    console.error('Path:', req.path);
+    console.error('Method:', req.method);
+    console.error('Error:', err);
+    console.error('Stack:', err.stack);
+    console.error('==============================================');
 
     // Erros do Prisma
     if (err.code === 'P2002') {

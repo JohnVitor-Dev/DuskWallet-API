@@ -13,7 +13,10 @@
   "license": "MIT",
   "author": "",
   "type": "module",
-  "main": "index.js",
+  "main": "api/index.js",
+  "engines": {
+    "node": ">=18.x"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon src/server.js",
@@ -39,8 +42,7 @@
     "express-validator": "^7.3.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
-    "prisma": "^6.19.0",
-    "zod": "^4.1.12"
+    "prisma": "^6.19.0"
   },
   "devDependencies": {
     "dotenv-cli": "^11.0.0",

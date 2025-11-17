@@ -1,17 +1,19 @@
 import 'dotenv/config';
 import express from 'express';
+import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import mongoSanitize from 'express-mongo-sanitize';
 import { errorHandler } from './middlewares/errorHandler.js';
 import { authMiddleware } from './middlewares/authMiddleware.js';
+import { prisma } from './prismaClient.js';
 
 import authRoute from './routes/auth.routes.js';
 import transactionRoute from './routes/transactions.routes.js';
 import dashboardRoute from './routes/dashboard.routes.js';
 import analysisRoute from './routes/analysis.routes.js';
 
-// Validar variáveis de ambiente (não usar process.exit na Vercel)
+// Validar variáveis de ambiente
 if (!process.env.JWT_SECRET) {
     console.error('❌ ERRO CRÍTICO: JWT_SECRET não está definido no arquivo .env');
 }
@@ -26,6 +28,9 @@ if (!process.env.GEMINI_API_KEY) {
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// CORS
+app.use(cors());
 
 // Headers HTTP
 app.use(helmet());
@@ -58,16 +63,63 @@ app.use(mongoSanitize());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Rota de health check
+app.get('/', async (req, res) => {
+    try {
+        await prisma.$queryRaw`SELECT 1`;
+        res.json({
+            status: 'online',
+            message: 'DuskWallet API is running',
+            database: 'connected',
+            environment: process.env.NODE_ENV || 'development'
+        });
+    } catch (error) {
+        console.error('Database connection error:', error);
+        res.status(503).json({
+            status: 'error',
+            message: 'Database connection failed',
+            error: error.message
+        });
+    }
+});
+
+app.get('/api', async (req, res) => {
+    try {
+        await prisma.$queryRaw`SELECT 1`;
+        res.json({
+            status: 'online',
+            message: 'DuskWallet API v1.0.0',
+            database: 'connected',
+            endpoints: ['/api/auth', '/api/transactions', '/api/dashboard', '/api/analysis']
+        });
+    } catch (error) {
+        console.error('Database connection error:', error);
+        res.status(503).json({
+            status: 'error',
+            message: 'Database connection failed',
+            error: error.message
+        });
+    }
+});
+
 // Rotas
 app.use('/api/auth', authLimiter, authRoute);
 app.use('/api/transactions', authMiddleware, transactionRoute);
-app.use('/api/dashboard', authMiddleware, dashboardRoute)
+app.use('/api/dashboard', authMiddleware, dashboardRoute);
 app.use('/api/analysis', authMiddleware, analysisRoute);
+
+// Tratamento de rota não encontrada
+app.use((req, res) => {
+    res.status(404).json({
+        error: 'Rota não encontrada',
+        path: req.path,
+        method: req.method
+    });
+});
 
 // Tratamento de erros
 app.use(errorHandler);
 
-// Apenas inicia o servidor se não estiver na Vercel
 if (process.env.NODE_ENV !== 'production') {
     app.listen(PORT, () => {
         console.log(`✅ Server is running on http://localhost:${PORT}`);
