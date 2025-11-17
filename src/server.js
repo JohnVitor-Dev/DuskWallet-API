@@ -11,20 +11,17 @@ import transactionRoute from './routes/transactions.routes.js';
 import dashboardRoute from './routes/dashboard.routes.js';
 import analysisRoute from './routes/analysis.routes.js';
 
-// Validar variáveis de ambiente
+// Validar variáveis de ambiente (não usar process.exit na Vercel)
 if (!process.env.JWT_SECRET) {
     console.error('❌ ERRO CRÍTICO: JWT_SECRET não está definido no arquivo .env');
-    process.exit(1);
 }
 
 if (!process.env.DATABASE_URL) {
     console.error('❌ ERRO CRÍTICO: DATABASE_URL não está definido no arquivo .env');
-    process.exit(1);
 }
 
 if (!process.env.GEMINI_API_KEY) {
     console.error('❌ ERRO CRÍTICO: GEMINI_API_KEY não está definido no arquivo .env');
-    process.exit(1);
 }
 
 const app = express();
@@ -70,9 +67,12 @@ app.use('/api/analysis', authMiddleware, analysisRoute);
 // Tratamento de erros
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-    console.log(`✅ Server is running on http://localhost:${PORT}`);
-    console.log(`✅ Environment: ${process.env.NODE_ENV || 'development'}`);
-});
+// Apenas inicia o servidor se não estiver na Vercel
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(PORT, () => {
+        console.log(`✅ Server is running on http://localhost:${PORT}`);
+        console.log(`✅ Environment: ${process.env.NODE_ENV || 'development'}`);
+    });
+}
 
 export default app;
