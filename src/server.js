@@ -38,8 +38,8 @@ app.use(cors());
 // Headers HTTP
 app.use(helmet());
 
-// Rate Limiting - Geral (configurado para Vercel)
-const generalLimiter = rateLimit({
+// Rate Limiting - Geral (configurado para Vercel) - DESATIVADO PARA TESTES
+/*const generalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutos
     max: 100, // 100 requisições por IP
     message: { error: 'Muitas requisições. Tente novamente em 15 minutos.' },
@@ -50,19 +50,19 @@ const generalLimiter = rateLimit({
         // Pular rate limit para health checks
         return req.path === '/' || req.path === '/api';
     }
-});
+});*/
 
-// Rate Limiting - Rotas de autenticação (configurado para Vercel)
-const authLimiter = rateLimit({
+// Rate Limiting - Rotas de autenticação (configurado para Vercel) - DESATIVADO PARA TESTES
+/*const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutos
     max: 5, // 5 tentativas por IP
     message: { error: 'Muitas tentativas de login. Tente novamente em 15 minutos.' },
     standardHeaders: true,
     legacyHeaders: false
-});
+});*/
 
-// Aplicar rate limiter geral
-app.use(generalLimiter);
+// Aplicar rate limiter geral - DESATIVADO PARA TESTES
+//app.use(generalLimiter);
 
 // Sanitização de dados
 app.use(mongoSanitize());
@@ -111,7 +111,7 @@ app.get('/api', async (req, res) => {
 });
 
 // Rotas
-app.use('/api/auth', authLimiter, authRoute);
+app.use('/api/auth', /*authLimiter,*/ authRoute); // Rate limiter desativado para testes
 app.use('/api/transactions', authMiddleware, transactionRoute);
 app.use('/api/dashboard', authMiddleware, dashboardRoute);
 app.use('/api/analysis', authMiddleware, analysisRoute);

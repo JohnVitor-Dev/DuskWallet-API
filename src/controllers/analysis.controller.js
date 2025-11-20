@@ -5,8 +5,22 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
 export const getAnalysis = async (req, res, next) => {
+    const userId = req.userID;
+
+    const rollbackIncrement = async () => {
+        if (req.userAiData && req.userAiData.incrementedInMiddleware && !req.userAiData.hasSubscription) {
+            await prisma.user.update({
+                where: { id: userId },
+                data: {
+                    aiAnalysisCount: {
+                        decrement: 1
+                    }
+                }
+            });
+        }
+    };
+
     try {
-        const userId = req.userID;
         const date60DaysAgo = new Date();
         date60DaysAgo.setDate(date60DaysAgo.getDate() - 60);
 
@@ -32,6 +46,7 @@ export const getAnalysis = async (req, res, next) => {
         });
 
         if (recentTransactions.length === 0) {
+            await rollbackIncrement();
             return res.status(200).json({ message: "Nenhuma transação encontrada nos últimos 60 dias." });
         }
 
@@ -130,6 +145,7 @@ export const getAnalysis = async (req, res, next) => {
 
                 if (attempt === maxRetries) {
                     console.error("Resposta da IA após todas as tentativas:", parseError.message);
+                    await rollbackIncrement();
                     next(new Error("Não foi possível obter uma resposta válida da IA após múltiplas tentativas."));
                     return;
                 }
@@ -139,6 +155,7 @@ export const getAnalysis = async (req, res, next) => {
         }
 
         if (!jsonAnalysis) {
+            await rollbackIncrement();
             next(new Error("Erro inesperado ao gerar análise"));
             return;
         }
@@ -159,16 +176,18 @@ export const getAnalysis = async (req, res, next) => {
             analysis: jsonAnalysis
         };
 
-        if (req.aiAnalysisRemaining !== undefined) {
-            response.aiAnalysisRemaining = req.aiAnalysisRemaining;
-            response.message = req.aiAnalysisRemaining === 0
+        if (req.userAiData && !req.userAiData.hasSubscription) {
+            const aiAnalysisRemaining = 2 - (req.userAiData.currentCount + 1);
+            response.aiAnalysisRemaining = aiAnalysisRemaining;
+            response.message = aiAnalysisRemaining === 0
                 ? "Esta foi sua última análise gratuita da semana."
-                : `Você tem ${req.aiAnalysisRemaining} análise(s) gratuita(s) restante(s) esta semana.`;
+                : `Você tem ${aiAnalysisRemaining} análise(s) gratuita(s) restante(s) esta semana.`;
         }
 
         res.status(200).json(response);
 
     } catch (error) {
+        await rollbackIncrement();
         next(error);
     }
 };
@@ -244,6 +263,13 @@ export const getAnalysisStatus = async (req, res, next) => {
         let daysUntilReset;
 
         if (daysSinceReset >= 7) {
+            await prisma.user.update({
+                where: { id: userId },
+                data: {
+                    aiAnalysisCount: 0,
+                    lastAnalysisReset: now
+                }
+            });
             analysisRemaining = 2;
             daysUntilReset = 0;
         } else {

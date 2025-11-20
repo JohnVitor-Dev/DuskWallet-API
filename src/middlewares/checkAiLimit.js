@@ -18,6 +18,9 @@ export const checkAiLimit = async (req, res, next) => {
         }
 
         if (user.hasSubscription) {
+            req.userAiData = {
+                hasSubscription: true
+            };
             return next();
         }
 
@@ -33,31 +36,49 @@ export const checkAiLimit = async (req, res, next) => {
                 }
             });
 
+            req.userAiData = {
+                currentCount: 0,
+                hasSubscription: user.hasSubscription
+            };
+
             return next();
         }
 
-        if (user.aiAnalysisCount >= 2) {
-            const daysUntilReset = 7 - daysSinceReset;
-            return res.status(403).json({
-                message: "Limite de análises por IA atingido.",
-                details: `Você já utilizou suas 2 análises gratuitas desta semana. Aguarde ${daysUntilReset} dia(s) para novas análises ou considere assinar o plano premium para acesso ilimitado.`,
-                limitReached: true,
-                daysUntilReset: daysUntilReset
-            });
-        }
-
-        await prisma.user.update({
-            where: { id: userId },
-            data: {
-                aiAnalysisCount: {
-                    increment: 1
+        try {
+            const updatedUser = await prisma.user.updateMany({
+                where: {
+                    id: userId,
+                    aiAnalysisCount: {
+                        lt: 2
+                    }
+                },
+                data: {
+                    aiAnalysisCount: {
+                        increment: 1
+                    }
                 }
+            });
+
+            if (updatedUser.count === 0) {
+                const daysUntilReset = 7 - daysSinceReset;
+                return res.status(403).json({
+                    message: "Limite de análises por IA atingido.",
+                    details: `Você já utilizou suas 2 análises gratuitas desta semana. Aguarde ${daysUntilReset} dia(s) para novas análises ou considere assinar o plano premium para acesso ilimitado.`,
+                    limitReached: true,
+                    daysUntilReset: daysUntilReset
+                });
             }
-        });
 
-        req.aiAnalysisRemaining = 2 - (user.aiAnalysisCount + 1);
+            req.userAiData = {
+                currentCount: user.aiAnalysisCount,
+                hasSubscription: user.hasSubscription,
+                incrementedInMiddleware: true
+            };
 
-        next();
+            next();
+        } catch (error) {
+            next(error);
+        }
     } catch (error) {
         next(error);
     }
