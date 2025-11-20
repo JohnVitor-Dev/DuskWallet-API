@@ -12,7 +12,11 @@ model User {
   email String @unique
   name  String
   password String
+  hasSubscription Boolean @default(false)
+  aiAnalysisCount Int @default(0)
+  lastAnalysisReset DateTime @default(now())
   transactions Transaction[]
+  analyses Analysis[]
 }
 
 enum TransactionType {
@@ -52,5 +56,20 @@ model Transaction {
   paymentMethod PaymentMethod
   date          DateTime            @default(now())
   userId        String
-  user          User                @relation(fields: [userId], references: [id])
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Analysis {
+  id                  String   @id @default(cuid())
+  userId              String
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resumo              String   @db.Text
+  pontoPositivo       String   @db.Text
+  pontoDeAtencao      String   @db.Text
+  analiseDePadroes    String[] 
+  conselhos           String[] 
+  planoDeEmergencia   String[] 
+  createdAt           DateTime @default(now())
+  
+  @@index([userId, createdAt])
 }

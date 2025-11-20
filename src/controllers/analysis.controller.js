@@ -143,7 +143,190 @@ export const getAnalysis = async (req, res, next) => {
             return;
         }
 
-        res.status(200).json({ analysis: jsonAnalysis });
+        await prisma.analysis.create({
+            data: {
+                userId: userId,
+                resumo: jsonAnalysis.resumo,
+                pontoPositivo: jsonAnalysis.ponto_positivo,
+                pontoDeAtencao: jsonAnalysis.ponto_de_atencao,
+                analiseDePadroes: jsonAnalysis.analise_de_padroes,
+                conselhos: jsonAnalysis.conselhos,
+                planoDeEmergencia: jsonAnalysis.plano_de_emergencia
+            }
+        });
+
+        const response = {
+            analysis: jsonAnalysis
+        };
+
+        if (req.aiAnalysisRemaining !== undefined) {
+            response.aiAnalysisRemaining = req.aiAnalysisRemaining;
+            response.message = req.aiAnalysisRemaining === 0
+                ? "Esta foi sua última análise gratuita da semana."
+                : `Você tem ${req.aiAnalysisRemaining} análise(s) gratuita(s) restante(s) esta semana.`;
+        }
+
+        res.status(200).json(response);
+
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const getLastAnalysis = async (req, res, next) => {
+    try {
+        const userId = req.userID;
+
+        const lastAnalysis = await prisma.analysis.findFirst({
+            where: {
+                userId: userId
+            },
+            orderBy: {
+                createdAt: 'desc'
+            }
+        });
+
+        if (!lastAnalysis) {
+            return res.status(404).json({
+                message: "Nenhuma análise encontrada. Gere sua primeira análise!"
+            });
+        }
+
+        const response = {
+            analysis: {
+                resumo: lastAnalysis.resumo,
+                ponto_positivo: lastAnalysis.pontoPositivo,
+                ponto_de_atencao: lastAnalysis.pontoDeAtencao,
+                analise_de_padroes: lastAnalysis.analiseDePadroes,
+                conselhos: lastAnalysis.conselhos,
+                plano_de_emergencia: lastAnalysis.planoDeEmergencia
+            },
+            createdAt: lastAnalysis.createdAt,
+            isFromCache: true
+        };
+
+        res.status(200).json(response);
+
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const getAnalysisStatus = async (req, res, next) => {
+    try {
+        const userId = req.userID;
+
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                hasSubscription: true,
+                aiAnalysisCount: true,
+                lastAnalysisReset: true
+            }
+        });
+
+        if (!user) {
+            return res.status(404).json({ message: "Usuário não encontrado." });
+        }
+
+        if (user.hasSubscription) {
+            return res.status(200).json({
+                hasSubscription: true,
+                analysisRemaining: "unlimited",
+                message: "Você tem acesso ilimitado às análises! ⭐"
+            });
+        }
+
+        const now = new Date();
+        const daysSinceReset = Math.floor((now - new Date(user.lastAnalysisReset)) / (1000 * 60 * 60 * 24));
+
+        let analysisRemaining;
+        let daysUntilReset;
+
+        if (daysSinceReset >= 7) {
+            analysisRemaining = 2;
+            daysUntilReset = 0;
+        } else {
+            analysisRemaining = Math.max(0, 2 - user.aiAnalysisCount);
+            daysUntilReset = 7 - daysSinceReset;
+        }
+
+        res.status(200).json({
+            hasSubscription: false,
+            analysisRemaining: analysisRemaining,
+            maxAnalysisPerWeek: 2,
+            daysUntilReset: daysUntilReset,
+            message: analysisRemaining === 0
+                ? `Limite atingido. Próximo reset em ${daysUntilReset} dia(s).`
+                : `Você tem ${analysisRemaining} análise(s) gratuita(s) restante(s) esta semana.`
+        });
+
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const getAnalysisHistory = async (req, res, next) => {
+    try {
+        const userId = req.userID;
+        const limit = parseInt(req.query.limit) || 10; // Padrão: últimas 10 análises
+
+        const analyses = await prisma.analysis.findMany({
+            where: {
+                userId: userId
+            },
+            orderBy: {
+                createdAt: 'desc'
+            },
+            take: limit,
+            select: {
+                id: true,
+                createdAt: true,
+                resumo: true // Apenas resumo para preview
+            }
+        });
+
+        res.status(200).json({
+            count: analyses.length,
+            analyses: analyses
+        });
+
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const getAnalysisById = async (req, res, next) => {
+    try {
+        const userId = req.userID;
+        const { id } = req.params;
+
+        const analysis = await prisma.analysis.findFirst({
+            where: {
+                id: id,
+                userId: userId // Garante que só busca análises do próprio usuário
+            }
+        });
+
+        if (!analysis) {
+            return res.status(404).json({
+                message: "Análise não encontrada."
+            });
+        }
+
+        const response = {
+            analysis: {
+                resumo: analysis.resumo,
+                ponto_positivo: analysis.pontoPositivo,
+                ponto_de_atencao: analysis.pontoDeAtencao,
+                analise_de_padroes: analysis.analiseDePadroes,
+                conselhos: analysis.conselhos,
+                plano_de_emergencia: analysis.planoDeEmergencia
+            },
+            createdAt: analysis.createdAt
+        };
+
+        res.status(200).json(response);
 
     } catch (error) {
         next(error);
